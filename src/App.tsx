@@ -75,21 +75,29 @@ export default function App() {
   const categories = ['todas', 'Alimentação', 'Transporte', 'Salário', 'Trabalho', 'Outro'];
   const months = ['todos', ...generateLast12Months()];
 
-  const filteredTransactions = transactions.filter((t) => {
-    const date = t.date?.seconds ? new Date(t.date.seconds * 1000) : null;
-    const matchType = filterType === 'todos' || t.type === filterType;
-    const matchCategory = filterCategory === 'todas' || t.category === filterCategory;
-    const matchMonth =
-      filterMonth === 'todos' ||
-      (date && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === filterMonth);
-    return matchType && matchCategory && matchMonth;
-  });
+  // 🔁 FILTRO + ORDENAÇÃO
+  const filteredTransactions = transactions
+    .filter((t) => {
+      const date = t.date?.seconds ? new Date(t.date.seconds * 1000) : null;
+      const matchType = filterType === 'todos' || t.type === filterType;
+      const matchCategory = filterCategory === 'todas' || t.category === filterCategory;
+      const matchMonth =
+        filterMonth === 'todos' ||
+        (date && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === filterMonth);
+      return matchType && matchCategory && matchMonth;
+    })
+    .sort((a, b) => {
+      const dateA = a.date?.seconds || 0;
+      const dateB = b.date?.seconds || 0;
+      return dateB - dateA; // mais recentes primeiro
+    });
 
-  const totalIncome = filteredTransactions
+  // ✅ TOTAIS BASEADOS EM TODAS AS TRANSAÇÕES
+  const totalIncome = transactions
     .filter((t) => t.type === 'receita')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
-  const totalExpense = filteredTransactions
+  const totalExpense = transactions
     .filter((t) => t.type === 'despesa')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
@@ -192,3 +200,4 @@ export default function App() {
     </div>
   );
 }
+
