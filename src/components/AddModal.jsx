@@ -8,22 +8,13 @@ export default function AddModal({ onAdd, onClose, categories }) {
   const [date, setDate] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Define as categorias conforme o tipo
   const categoriasFiltradas = categories.filter((cat) => {
     if (cat === 'todas') return false;
-
-    if (type === 'receita') {
-      return ['Salário', 'Trabalho', 'Outro'].includes(cat);
-    }
-
-    if (type === 'despesa') {
-      return ['Alimentação', 'Transporte', 'Outro'].includes(cat);
-    }
-
+    if (type === 'receita') return ['Salário', 'Trabalho', 'Outro'].includes(cat);
+    if (type === 'despesa') return ['Alimentação', 'Transporte', 'Outro'].includes(cat);
     return false;
   });
 
-  // Atualiza categoria padrão sempre que o tipo mudar
   useEffect(() => {
     setCategory(categoriasFiltradas[0] || '');
   }, [type, categories]);
@@ -112,12 +103,20 @@ export default function AddModal({ onAdd, onClose, categories }) {
         )}
       </select>
 
-      <input
-        type="datetime-local"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        className="w-full border rounded-lg px-4 py-2"
-      />
+      {/* CAMPO DE DATA/HORA COM PLACEHOLDER SIMULADO */}
+      <div className="relative w-full">
+        {!date && (
+          <span className="absolute top-2.5 left-4 text-gray-400 pointer-events-none text-sm">
+            Data e hora
+          </span>
+        )}
+        <input
+          type="datetime-local"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={`appearance-none w-full border rounded-lg px-4 py-2 pl-4 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${!date ? 'text-gray-400' : 'text-black'}`}
+        />
+      </div>
 
       {success && (
         <div className="text-green-600 text-center font-semibold">
