@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import TransactionForm from './components/TransactionForm';
+// import TransactionForm from './components/TransactionForm';
 import TransactionList from './components/TransactionList';
 import EditModal from './components/EditModal';
+import AddModal from './components/AddModal';
 import { db } from './firebaseConfig';
 
 import {
@@ -33,13 +34,20 @@ export default function App() {
   const [filterMonth, setFilterMonth] = useState('todos');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchTransactions = async () => {
     const querySnapshot = await getDocs(collection(db, 'transactions'));
-    const data = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const data = querySnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .sort((a, b) => {
+        const dateA = a.date?.seconds || 0;
+        const dateB = b.date?.seconds || 0;
+        return dateB - dateA; // MAIS RECENTES PRIMEIRO
+      });
     setTransactions(data);
   };
 
@@ -75,29 +83,21 @@ export default function App() {
   const categories = ['todas', 'Alimentação', 'Transporte', 'Salário', 'Trabalho', 'Outro'];
   const months = ['todos', ...generateLast12Months()];
 
-  // 🔁 FILTRO + ORDENAÇÃO
-  const filteredTransactions = transactions
-    .filter((t) => {
-      const date = t.date?.seconds ? new Date(t.date.seconds * 1000) : null;
-      const matchType = filterType === 'todos' || t.type === filterType;
-      const matchCategory = filterCategory === 'todas' || t.category === filterCategory;
-      const matchMonth =
-        filterMonth === 'todos' ||
-        (date && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === filterMonth);
-      return matchType && matchCategory && matchMonth;
-    })
-    .sort((a, b) => {
-      const dateA = a.date?.seconds || 0;
-      const dateB = b.date?.seconds || 0;
-      return dateB - dateA; // mais recentes primeiro
-    });
+  const filteredTransactions = transactions.filter((t) => {
+    const date = t.date?.seconds ? new Date(t.date.seconds * 1000) : null;
+    const matchType = filterType === 'todos' || t.type === filterType;
+    const matchCategory = filterCategory === 'todas' || t.category === filterCategory;
+    const matchMonth =
+      filterMonth === 'todos' ||
+      (date && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === filterMonth);
+    return matchType && matchCategory && matchMonth;
+  });
 
-  // ✅ TOTAIS BASEADOS EM TODAS AS TRANSAÇÕES
-  const totalIncome = transactions
+  const totalIncome = filteredTransactions
     .filter((t) => t.type === 'receita')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
-  const totalExpense = transactions
+  const totalExpense = filteredTransactions
     .filter((t) => t.type === 'despesa')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
@@ -173,8 +173,6 @@ export default function App() {
             )}
           </div>
 
-          <TransactionForm onAdd={addTransaction} />
-
           <h2 className="text-2xl font-semibold mt-6 mb-4 text-gray-800">📋 Histórico de Transações</h2>
           <TransactionList
             transactions={filteredTransactions}
@@ -182,6 +180,7 @@ export default function App() {
             onEdit={openEditModal}
           />
 
+          {/* MODAL DE EDIÇÃO */}
           {editingTransaction && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
@@ -193,11 +192,31 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* MODAL DE ADIÇÃO */}
+          {showAddModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
+                <AddModal
+                  onAdd={addTransaction}
+                  onClose={() => setShowAddModal(false)}
+                  categories={categories}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* BOTÃO FLUTUANTE DE ADICIONAR */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="fixed bottom-6 right-6 bg-indigo-600 text-white text-3xl w-14 h-14 rounded-full shadow-lg hover:bg-indigo-700 transition-all"
+      >
+        +
+      </button>
 
       <Footer />
     </div>
   );
 }
-
