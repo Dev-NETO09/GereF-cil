@@ -87,7 +87,6 @@ export default function App() {
     return matchType && matchCategory && matchStartDate && matchEndDate;
   });
 
-  // TOTAL GERAL (fixo, não muda com filtros)
   const totalIncome = transactions
     .filter((t) => t.type === 'receita')
     .reduce((acc, t) => acc + Number(t.value), 0);
@@ -106,7 +105,6 @@ export default function App() {
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-8">
           <h1 className="text-4xl font-bold text-center text-indigo-800 mb-6">Dashboard Financeiro</h1>
 
-          {/* Cards superiores com totais fixos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="bg-green-200/50 border border-green-400 p-4 rounded-3xl shadow hover:scale-105 transition">
               <h2 className="text-sm text-green-700 font-semibold">Receitas</h2>
@@ -122,7 +120,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Botão para mostrar/ocultar filtros */}
           <div className="mb-6">
             <button
               onClick={() => setMostrarFiltros((prev) => !prev)}
@@ -131,10 +128,8 @@ export default function App() {
               {mostrarFiltros ? 'Ocultar Filtros' : '🔍 Filtros'}
             </button>
 
-            {/* Filtros ativos */}
             {mostrarFiltros && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                {/* Filtro tipo */}
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
@@ -145,7 +140,6 @@ export default function App() {
                   <option value="despesa">Somente Despesas</option>
                 </select>
 
-                {/* Filtro categoria */}
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -158,28 +152,45 @@ export default function App() {
                   ))}
                 </select>
 
-                {/* Filtro data */}
-                <div className="flex flex-col gap-2 bg-gray-50 border border-gray-300 p-3 rounded-2xl shadow-sm">
-                  <span className="text-sm text-gray-700 font-semibold">Período:</span>
+                {/* Período com placeholder visual */}
+                <div className="bg-gray-50 border border-gray-300 p-3 rounded-2xl shadow-sm">
+                  <label className="text-sm text-gray-700 font-semibold block mb-2">
+                    Período (de - até)
+                  </label>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="rounded-full border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
-                    />
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="rounded-full border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
-                    />
+                    <div className="relative w-full">
+                      {!startDate && (
+                        <span className="absolute top-2.5 left-4 text-gray-400 pointer-events-none text-sm">
+                          De
+                        </span>
+                      )}
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="appearance-none rounded-full border border-gray-300 p-2 pl-4 pr-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div className="relative w-full">
+                      {!endDate && (
+                        <span className="absolute top-2.5 left-4 text-gray-400 pointer-events-none text-sm">
+                          Até
+                        </span>
+                      )}
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="appearance-none rounded-full border border-gray-300 p-2 pl-4 pr-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
 
                   {(startDate || endDate) && (
                     <button
                       onClick={clearDateFilter}
-                      className="text-xs text-red-600 hover:underline self-start mt-1"
+                      className="text-xs text-red-600 hover:underline mt-2"
                     >
                       ✖ Limpar período
                     </button>
@@ -189,7 +200,6 @@ export default function App() {
             )}
           </div>
 
-          {/* Lista de transações filtradas */}
           <h2 className="text-2xl font-semibold mt-6 mb-4 text-gray-800">📋 Histórico de Transações</h2>
           <TransactionList
             transactions={filteredTransactions}
@@ -197,7 +207,6 @@ export default function App() {
             onEdit={openEditModal}
           />
 
-          {/* MODAL DE EDIÇÃO */}
           {editingTransaction && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
@@ -210,7 +219,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MODAL DE ADIÇÃO */}
           {showAddModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
@@ -225,7 +233,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* BOTÃO ADICIONAR */}
       <button
         onClick={() => setShowAddModal(true)}
         className="fixed bottom-6 right-6 bg-indigo-600 text-white text-3xl w-14 h-14 rounded-full shadow-lg hover:bg-indigo-700 transition-all"
@@ -237,4 +244,3 @@ export default function App() {
     </div>
   );
 }
-
