@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-// import TransactionForm from './components/TransactionForm';
 import TransactionList from './components/TransactionList';
 import EditModal from './components/EditModal';
 import AddModal from './components/AddModal';
@@ -16,22 +15,12 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 
-function generateLast12Months() {
-  const months = [];
-  const today = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    months.push(monthStr);
-  }
-  return months;
-}
-
 export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [filterType, setFilterType] = useState('todos');
   const [filterCategory, setFilterCategory] = useState('todas');
-  const [filterMonth, setFilterMonth] = useState('todos');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -46,7 +35,7 @@ export default function App() {
       .sort((a, b) => {
         const dateA = a.date?.seconds || 0;
         const dateB = b.date?.seconds || 0;
-        return dateB - dateA; // MAIS RECENTES PRIMEIRO
+        return dateB - dateA;
       });
     setTransactions(data);
   };
@@ -80,24 +69,30 @@ export default function App() {
     setEditingTransaction(null);
   };
 
+  const clearDateFilter = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
   const categories = ['todas', 'Alimentação', 'Transporte', 'Salário', 'Trabalho', 'Outro'];
-  const months = ['todos', ...generateLast12Months()];
 
   const filteredTransactions = transactions.filter((t) => {
     const date = t.date?.seconds ? new Date(t.date.seconds * 1000) : null;
+
     const matchType = filterType === 'todos' || t.type === filterType;
     const matchCategory = filterCategory === 'todas' || t.category === filterCategory;
-    const matchMonth =
-      filterMonth === 'todos' ||
-      (date && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === filterMonth);
-    return matchType && matchCategory && matchMonth;
+    const matchStartDate = !startDate || (date && date >= new Date(startDate + 'T00:00:00'));
+    const matchEndDate = !endDate || (date && date <= new Date(endDate + 'T23:59:59'));
+
+    return matchType && matchCategory && matchStartDate && matchEndDate;
   });
 
-  const totalIncome = filteredTransactions
+  // TOTAL GERAL (fixo, não muda com filtros)
+  const totalIncome = transactions
     .filter((t) => t.type === 'receita')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
-  const totalExpense = filteredTransactions
+  const totalExpense = transactions
     .filter((t) => t.type === 'despesa')
     .reduce((acc, t) => acc + Number(t.value), 0);
 
@@ -111,6 +106,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-8">
           <h1 className="text-4xl font-bold text-center text-indigo-800 mb-6">Dashboard Financeiro</h1>
 
+          {/* Cards superiores com totais fixos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="bg-green-200/50 border border-green-400 p-4 rounded-3xl shadow hover:scale-105 transition">
               <h2 className="text-sm text-green-700 font-semibold">Receitas</h2>
@@ -126,6 +122,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Botão para mostrar/ocultar filtros */}
           <div className="mb-6">
             <button
               onClick={() => setMostrarFiltros((prev) => !prev)}
@@ -134,8 +131,10 @@ export default function App() {
               {mostrarFiltros ? 'Ocultar Filtros' : '🔍 Filtros'}
             </button>
 
+            {/* Filtros ativos */}
             {mostrarFiltros && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                {/* Filtro tipo */}
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
@@ -146,6 +145,7 @@ export default function App() {
                   <option value="despesa">Somente Despesas</option>
                 </select>
 
+                {/* Filtro categoria */}
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -158,21 +158,38 @@ export default function App() {
                   ))}
                 </select>
 
-                <select
-                  value={filterMonth}
-                  onChange={(e) => setFilterMonth(e.target.value)}
-                  className="rounded-full border border-gray-300 p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                >
-                  {months.map((month) => (
-                    <option key={month} value={month}>
-                      {month === 'todos' ? 'Todos os Meses' : month}
-                    </option>
-                  ))}
-                </select>
+                {/* Filtro data */}
+                <div className="flex flex-col gap-2 bg-gray-50 border border-gray-300 p-3 rounded-2xl shadow-sm">
+                  <span className="text-sm text-gray-700 font-semibold">Período:</span>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="rounded-full border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                    />
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="rounded-full border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                    />
+                  </div>
+
+                  {(startDate || endDate) && (
+                    <button
+                      onClick={clearDateFilter}
+                      className="text-xs text-red-600 hover:underline self-start mt-1"
+                    >
+                      ✖ Limpar período
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
+          {/* Lista de transações filtradas */}
           <h2 className="text-2xl font-semibold mt-6 mb-4 text-gray-800">📋 Histórico de Transações</h2>
           <TransactionList
             transactions={filteredTransactions}
@@ -208,7 +225,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* BOTÃO FLUTUANTE DE ADICIONAR */}
+      {/* BOTÃO ADICIONAR */}
       <button
         onClick={() => setShowAddModal(true)}
         className="fixed bottom-6 right-6 bg-indigo-600 text-white text-3xl w-14 h-14 rounded-full shadow-lg hover:bg-indigo-700 transition-all"
@@ -220,3 +237,4 @@ export default function App() {
     </div>
   );
 }
+
