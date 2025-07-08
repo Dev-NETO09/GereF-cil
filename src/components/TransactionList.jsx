@@ -25,7 +25,15 @@ export default function TransactionList({ transactions, onDelete, onEdit }) {
             <p className="font-semibold text-gray-800">{tx.description}</p>
             <p className="text-sm text-gray-600">
               R$ {Number(tx.value).toFixed(2)} &bull; {tx.category} &bull;{' '}
-              {tx.date && new Date(tx.date.seconds * 1000).toLocaleString('pt-BR')}
+              {tx.date
+                ? new Date(tx.date.seconds * 1000).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Sem data'}
             </p>
           </div>
           <div className="flex items-center gap-2 ml-4">
@@ -47,4 +55,3 @@ export default function TransactionList({ transactions, onDelete, onEdit }) {
     </div>
   );
 }
-
