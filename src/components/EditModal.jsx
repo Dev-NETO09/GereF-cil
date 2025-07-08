@@ -6,20 +6,30 @@ export default function EditModal({ transaction, onSave, onClose }) {
     description: '',
     value: '',
     category: 'Outro',
-    date: '', // ✅ novo campo
+    date: '',
   });
+
+  // Lista de categorias baseadas no tipo
+  const getCategoriasFiltradas = (tipo) => {
+    if (tipo === 'receita') return ['Salário', 'Trabalho', 'Outro'];
+    if (tipo === 'despesa') return ['Alimentação', 'Transporte', 'Outro'];
+    return ['Outro'];
+  };
 
   useEffect(() => {
     if (transaction) {
-      const formattedDate = transaction.date?.seconds
-        ? new Date(transaction.date.seconds * 1000).toISOString().split('T')[0]
-        : '';
+      const data = transaction.date?.seconds
+        ? new Date(transaction.date.seconds * 1000)
+        : new Date(transaction.date);
+
+      const dateStr = data.toISOString().slice(0, 16); // formato yyyy-MM-ddTHH:mm
+
       setForm({
         type: transaction.type || 'receita',
         description: transaction.description || '',
         value: transaction.value || '',
         category: transaction.category || 'Outro',
-        date: formattedDate, // ✅ atribuindo valor inicial
+        date: dateStr,
       });
     }
   }, [transaction]);
@@ -36,9 +46,11 @@ export default function EditModal({ transaction, onSave, onClose }) {
       ...transaction,
       ...form,
       value: parseFloat(form.value) || 0,
-      date: form.date ? new Date(form.date) : transaction.date, // ✅ convertendo para Date
+      date: form.date ? new Date(form.date) : transaction.date,
     });
   };
+
+  const categoriasFiltradas = getCategoriasFiltradas(form.type);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
@@ -54,6 +66,7 @@ export default function EditModal({ transaction, onSave, onClose }) {
             <option value="receita">Receita</option>
             <option value="despesa">Despesa</option>
           </select>
+
           <input
             name="description"
             value={form.description}
@@ -62,6 +75,7 @@ export default function EditModal({ transaction, onSave, onClose }) {
             className="w-full rounded border p-2"
             required
           />
+
           <input
             name="value"
             value={form.value}
@@ -72,25 +86,27 @@ export default function EditModal({ transaction, onSave, onClose }) {
             className="w-full rounded border p-2"
             required
           />
+
           <input
             name="date"
             value={form.date}
             onChange={handleChange}
-            type="date"
+            type="datetime-local"
             className="w-full rounded border p-2"
             required
           />
+
           <select
             name="category"
             value={form.category}
             onChange={handleChange}
             className="w-full rounded border p-2"
           >
-            <option>Alimentação</option>
-            <option>Transporte</option>
-            <option>Salário</option>
-            <option>Trabalho</option>
-            <option>Outro</option>
+            {categoriasFiltradas.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
           </select>
 
           <div className="flex justify-end space-x-3 mt-4">
@@ -113,3 +129,4 @@ export default function EditModal({ transaction, onSave, onClose }) {
     </div>
   );
 }
+
