@@ -6,15 +6,20 @@ export default function EditModal({ transaction, onSave, onClose }) {
     description: '',
     value: '',
     category: 'Outro',
+    date: '', // ✅ novo campo
   });
 
   useEffect(() => {
     if (transaction) {
+      const formattedDate = transaction.date?.seconds
+        ? new Date(transaction.date.seconds * 1000).toISOString().split('T')[0]
+        : '';
       setForm({
         type: transaction.type || 'receita',
         description: transaction.description || '',
         value: transaction.value || '',
         category: transaction.category || 'Outro',
+        date: formattedDate, // ✅ atribuindo valor inicial
       });
     }
   }, [transaction]);
@@ -27,7 +32,12 @@ export default function EditModal({ transaction, onSave, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ ...transaction, ...form });
+    onSave({
+      ...transaction,
+      ...form,
+      value: parseFloat(form.value) || 0,
+      date: form.date ? new Date(form.date) : transaction.date, // ✅ convertendo para Date
+    });
   };
 
   return (
@@ -59,6 +69,14 @@ export default function EditModal({ transaction, onSave, onClose }) {
             placeholder="Valor"
             type="number"
             step="0.01"
+            className="w-full rounded border p-2"
+            required
+          />
+          <input
+            name="date"
+            value={form.date}
+            onChange={handleChange}
+            type="date"
             className="w-full rounded border p-2"
             required
           />
