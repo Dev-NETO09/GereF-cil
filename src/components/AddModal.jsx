@@ -73,7 +73,6 @@ export default function AddModal({ onAdd, onClose, categories }) {
         value={date}
         onChange={(e) => setDate(e.target.value)}
         className="w-full border rounded-lg px-4 py-2"
-        required
       />
 
       <div className="flex justify-end gap-2">
